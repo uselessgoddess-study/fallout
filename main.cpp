@@ -1,3 +1,5 @@
+// Варинт 3(13) Бабочкин Александр
+
 #include <iostream>
 
 int main() {
