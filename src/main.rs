@@ -44,14 +44,14 @@ enum Commands {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, ValueEnum)]
 #[remain::sorted]
-enum Precipitation {
+enum Fallout {
     Clear,
     Rain,
     Sleet,
     Snow,
 }
 
-impl FromStr for Precipitation {
+impl FromStr for Fallout {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -66,7 +66,7 @@ struct DayInfo {
     day: u8,
     month: u8,
     amount: f32,
-    ty: Precipitation,
+    ty: Fallout,
 }
 
 impl DayInfo {
@@ -107,7 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(Option::unwrap) // none is unreachable
         .filter(|info| {
             if let Commands::Rain { .. } = &args.command {
-                info.ty == Precipitation::Rain
+                info.ty == Fallout::Rain
             } else {
                 info.amount <= CLEAR_RANK
             }
