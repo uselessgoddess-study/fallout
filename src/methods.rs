@@ -1,8 +1,6 @@
 use crate::{DayInfo, Fallout};
 
-fn amount_of(infos: &[DayInfo], month: u8) -> f32 {
-    assert!(month < 12, "later use `Month` wrapper");
-
+pub fn amount_of(infos: &[DayInfo], month: u8) -> f32 {
     infos
         .iter()
         .filter(|&info| info.month == month)
@@ -42,7 +40,27 @@ fn empty_amount() {
 }
 
 #[test]
-#[should_panic]
-fn incorrect_month() {
-    amount_of(&[], 13);
+fn empty_month() {
+    let infos = vec![
+        DayInfo {
+            day: 12,
+            month: 1,
+            amount: 1.5,
+            ty: Fallout::Rain,
+        },
+        DayInfo {
+            day: 11,
+            month: 2,
+            amount: 1.5,
+            ty: Fallout::Rain,
+        },
+        DayInfo {
+            day: 1,
+            month: 3,
+            amount: 1.5,
+            ty: Fallout::Rain,
+        },
+    ];
+
+    assert_eq!(0.0, amount_of(&infos, 4));
 }
