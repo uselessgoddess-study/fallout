@@ -1,3 +1,5 @@
+mod date;
+
 use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     cmp::Ordering,
@@ -8,7 +10,7 @@ use std::{
 };
 
 // use anyhow::Result;
-use chrono::{Month, Weekday};
+use crate::date::{Day, Month};
 use tap::Pipe;
 
 #[derive(Parser)]
@@ -46,14 +48,14 @@ enum Commands {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, ValueEnum)]
 #[remain::sorted]
-enum Precipitation {
+enum Fallout {
     Clear,
     Rain,
     Sleet,
     Snow,
 }
 
-impl FromStr for Precipitation {
+impl FromStr for Fallout {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -65,35 +67,32 @@ const CLEAR_RANK: f32 = 1.5;
 
 #[derive(Debug)]
 struct DayInfo {
-    day: Weekday,
+    day: Day,
     month: Month,
     amount: f32,
-    ty: Precipitation,
-}
-
-fn day_cmp(a: &Weekday, b: &Weekday) -> Ordering {
-    a.num_days_from_monday().cmp(&b.num_days_from_monday())
-}
-
-fn month_cmp(a: &Month, b: &Month) -> Ordering {
-    a.number_from_month().cmp(&b.number_from_month())
+    ty: Fallout,
 }
 
 impl DayInfo {
     fn parse<'a>(mut input: impl Iterator<Item = &'a str>) -> Option<Self> {
+        let mut input = input.inspect(|x| println!("{x}"));
         Some(Self {
-            day: input.next()?.parse().ok()?,
-            month: input.next()?.parse().ok()?,
+            day: input.next()?.parse::<u8>().ok()?.pipe(Day::from_u8)?,
+            month: input.next()?.parse::<u8>().ok()?.pipe(Month::from_u8)?,
             amount: input.next()?.parse().ok()?,
             ty: input.next()?.parse().ok()?,
         })
     }
 
     fn cmp(&self, other: &Self) -> Ordering {
+        self.amount.total_cmp(&other.amount)
+    }
+
+    fn cmp_metadata(&self, other: &Self) -> Ordering {
         self.ty
             .cmp(&self.ty)
-            .then_with(|| month_cmp(&self.month, &other.month))
-            .then_with(|| day_cmp(&self.day, &other.day))
+            .then_with(|| self.month.cmp(&other.month))
+            .then_with(|| self.day.cmp(&other.day))
     }
 }
 
@@ -113,7 +112,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(Option::unwrap) // none is unreachable
         .filter(|info| {
             if let Commands::Rain { .. } = &args.command {
-                info.ty == Precipitation::Rain
+                info.ty == Fallout::Rain
             } else {
                 info.amount <= CLEAR_RANK
             }
