@@ -2,8 +2,9 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     cmp::Ordering,
     error::Error,
+    fmt::{Display, Formatter},
     fs::File,
-    io::{BufRead, BufReader},
+    io::{stdin, BufRead, BufReader},
     str::FromStr,
 };
 
@@ -15,31 +16,25 @@ use tap::Pipe;
 #[clap(version = "1.0")]
 #[clap(about = "Вариант 3(13) Бабочкин Александр")]
 struct Args {
-    /// Name of file with data
-    name: String,
     #[clap(subcommand)]
     command: Commands,
+    #[clap(long, arg_enum, default_value_t = SortBy::Amount)]
+    sort: SortBy,
 }
 
 #[derive(Clone, ValueEnum)]
 enum SortBy {
-    Rainfall,
-    Precipitation,
+    Amount,
+    Fallout,
 }
 
 #[derive(Subcommand)]
 enum Commands {
     /// Find all days with rain
-    Rain {
-        #[clap(arg_enum)]
-        sort: SortBy,
-    },
+    Rain,
 
     /// Find all precipitation-free days
-    Cleared {
-        #[clap(arg_enum)]
-        sort: SortBy,
-    },
+    Cleared,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, ValueEnum)]
@@ -49,6 +44,17 @@ enum Fallout {
     Rain,
     Sleet,
     Snow,
+}
+
+impl Display for Fallout {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Fallout::Clear => write!(f, "clear"),
+            Fallout::Rain => write!(f, "rain"),
+            Fallout::Sleet => write!(f, "sleet"),
+            Fallout::Snow => write!(f, "snow"),
+        }
+    }
 }
 
 impl FromStr for Fallout {
@@ -85,7 +91,7 @@ impl DayInfo {
 
     fn cmp_metadata(&self, other: &Self) -> Ordering {
         self.ty
-            .cmp(&self.ty)
+            .cmp(&other.ty)
             .then_with(|| self.month.cmp(&other.month))
             .then_with(|| self.day.cmp(&other.day))
     }
@@ -94,14 +100,7 @@ impl DayInfo {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    let buf: BufReader<_> = File::open(args.name)?.pipe(BufReader::new);
-
-    let sort = &match &args.command {
-        Commands::Rain { sort } => sort.clone(),
-        Commands::Cleared { sort } => sort.clone(),
-    };
-
-    let mut infos: Vec<_> = buf
+    let mut infos: Vec<_> = stdin()
         .lines()
         .map(|line| -> Option<_> { DayInfo::parse(line.ok()?.split_whitespace()) })
         .map(Option::unwrap) // none is unreachable
@@ -114,10 +113,22 @@ fn main() -> Result<(), Box<dyn Error>> {
         })
         .collect();
 
-    if let SortBy::Rainfall = sort {
-        infos.sort_by(|a, b| a.amount.total_cmp(&b.amount))
-    } else {
+    if let SortBy::Amount = args.sort {
         infos.sort_by(DayInfo::cmp)
+    } else {
+        infos.sort_by(DayInfo::cmp_metadata)
+    }
+
+    for DayInfo {
+        day,
+        month,
+        amount,
+        ty,
+    } in infos
+    {
+        println!(
+            "|день: {day:2} месяц: {month:2} количество осадков: {amount:3} тип осадков: {ty}|"
+        );
     }
 
     Ok(())
