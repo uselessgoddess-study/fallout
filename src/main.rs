@@ -1,5 +1,9 @@
 #![deny(clippy::all, clippy::pedantic, clippy::perf, clippy::nursery)]
 
+mod methods;
+
+use methods::amount_of;
+
 use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     cmp::Ordering,
@@ -33,11 +37,17 @@ enum Commands {
 
     /// Find all precipitation-free days
     Cleared,
+
+    /// Calculate amount of precipitation in `month`
+    AmountOf {
+        #[clap(value_parser = clap::value_parser!(u8).range(1..=12))]
+        month: u8,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, ValueEnum)]
 #[remain::sorted]
-enum Fallout {
+pub enum Fallout {
     Clear,
     Rain,
     Sleet,
@@ -66,11 +76,11 @@ impl FromStr for Fallout {
 const CLEAR_RANK: f32 = 1.5;
 
 #[derive(Debug)]
-struct DayInfo {
-    day: u8,
-    month: u8,
-    amount: f32,
-    ty: Fallout,
+pub struct DayInfo {
+    pub day: u8,
+    pub month: u8,
+    pub amount: f32,
+    pub ty: Fallout,
 }
 
 impl DayInfo {
@@ -98,34 +108,44 @@ impl DayInfo {
 fn main() {
     let args = Args::parse();
 
-    let mut infos: Vec<_> = io::stdin()
+    let infos = io::stdin()
         .lines()
         .map(|line| -> Option<_> { DayInfo::parse(line.ok()?.split_whitespace()) })
-        .map(Option::unwrap) // none is unreachable
-        .filter(|info| {
-            if let Commands::Rain { .. } = &args.command {
-                info.ty == Fallout::Rain
+        .map(Option::unwrap); // none is unreachable
+
+    match args.command {
+        command @ (Commands::Rain | Commands::Cleared) => {
+            let mut infos: Vec<_> = infos
+                .filter(|info| {
+                    if let Commands::Rain { .. } = &command {
+                        info.ty == Fallout::Rain
+                    } else {
+                        info.amount <= CLEAR_RANK
+                    }
+                })
+                .collect();
+
+            if let SortBy::Amount = args.sort {
+                infos.sort_by(DayInfo::cmp);
             } else {
-                info.amount <= CLEAR_RANK
+                infos.sort_by(DayInfo::cmp_metadata);
             }
-        })
-        .collect();
 
-    if let SortBy::Amount = args.sort {
-        infos.sort_by(DayInfo::cmp);
-    } else {
-        infos.sort_by(DayInfo::cmp_metadata);
-    }
-
-    for DayInfo {
-        day,
-        month,
-        amount,
-        ty,
-    } in infos
-    {
-        println!(
-            "|день: {day:2} месяц: {month:2} количество осадков: {amount:3} тип осадков: {ty}|"
-        );
+            for DayInfo {
+                day,
+                month,
+                amount,
+                ty,
+            } in infos
+            {
+                println!(
+                    "|день: {day:2} месяц: {month:2} количество осадков: {amount:3} тип осадков: {ty}|"
+                );
+            }
+        }
+        Commands::AmountOf { month } => {
+            let place: Vec<_> = infos.collect();
+            println!("amount: {}", amount_of(&place, month));
+        }
     }
 }
