@@ -1,10 +1,12 @@
 use clap::{Parser, Subcommand, ValueEnum};
-use std::cmp::Ordering;
-use std::error::Error;
-use std::fs;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::str::FromStr;
+use std::{
+    cmp::Ordering,
+    error::Error,
+    fs,
+    fs::File,
+    io::{BufRead, BufReader},
+    str::FromStr,
+};
 
 // use anyhow::Result;
 use chrono::{Month, Weekday};
