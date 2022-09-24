@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chrono = "0.4.22"
 tap = "1.0.1"
-anyhow = "1.0.65"
 remain = "0.2.4"
-clap_derive = "3.2.18"
-clap = { version = "3.2.22", features = ["clap_derive"] }
+chrono = "0.4.22"
+clap = { version = "3.2.22", features = ["derive"] }
