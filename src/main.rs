@@ -2,7 +2,6 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     cmp::Ordering,
     error::Error,
-    fs,
     fs::File,
     io::{BufRead, BufReader},
     str::FromStr,
