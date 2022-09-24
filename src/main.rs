@@ -7,8 +7,6 @@ use std::{
     str::FromStr,
 };
 
-// use anyhow::Result;
-use chrono::{Month, Weekday};
 use tap::Pipe;
 
 #[derive(Parser)]
@@ -65,18 +63,10 @@ const CLEAR_RANK: f32 = 1.5;
 
 #[derive(Debug)]
 struct DayInfo {
-    day: Weekday,
-    month: Month,
+    day: u8,
+    month: u8,
     amount: f32,
     ty: Precipitation,
-}
-
-fn day_cmp(a: &Weekday, b: &Weekday) -> Ordering {
-    a.num_days_from_monday().cmp(&b.num_days_from_monday())
-}
-
-fn month_cmp(a: &Month, b: &Month) -> Ordering {
-    a.number_from_month().cmp(&b.number_from_month())
 }
 
 impl DayInfo {
@@ -90,10 +80,14 @@ impl DayInfo {
     }
 
     fn cmp(&self, other: &Self) -> Ordering {
+        self.amount.total_cmp(&other.amount)
+    }
+
+    fn cmp_metadata(&self, other: &Self) -> Ordering {
         self.ty
             .cmp(&self.ty)
-            .then_with(|| month_cmp(&self.month, &other.month))
-            .then_with(|| day_cmp(&self.day, &other.day))
+            .then_with(|| self.month.cmp(&other.month))
+            .then_with(|| self.day.cmp(&other.day))
     }
 }
 
