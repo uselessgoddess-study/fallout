@@ -1,14 +1,12 @@
+#![deny(clippy::all, clippy::pedantic, clippy::perf, clippy::nursery)]
+
 use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     cmp::Ordering,
-    error::Error,
     fmt::{Display, Formatter},
-    fs::File,
-    io::{stdin, BufRead, BufReader},
+    io,
     str::FromStr,
 };
-
-use tap::Pipe;
 
 #[derive(Parser)]
 #[clap(name = "fall out")]
@@ -49,10 +47,10 @@ enum Fallout {
 impl Display for Fallout {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Fallout::Clear => write!(f, "clear"),
-            Fallout::Rain => write!(f, "rain"),
-            Fallout::Sleet => write!(f, "sleet"),
-            Fallout::Snow => write!(f, "snow"),
+            Self::Clear => write!(f, "clear"),
+            Self::Rain => write!(f, "rain"),
+            Self::Sleet => write!(f, "sleet"),
+            Self::Snow => write!(f, "snow"),
         }
     }
 }
@@ -97,10 +95,10 @@ impl DayInfo {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let args = Args::parse();
 
-    let mut infos: Vec<_> = stdin()
+    let mut infos: Vec<_> = io::stdin()
         .lines()
         .map(|line| -> Option<_> { DayInfo::parse(line.ok()?.split_whitespace()) })
         .map(Option::unwrap) // none is unreachable
@@ -114,9 +112,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         .collect();
 
     if let SortBy::Amount = args.sort {
-        infos.sort_by(DayInfo::cmp)
+        infos.sort_by(DayInfo::cmp);
     } else {
-        infos.sort_by(DayInfo::cmp_metadata)
+        infos.sort_by(DayInfo::cmp_metadata);
     }
 
     for DayInfo {
@@ -130,6 +128,4 @@ fn main() -> Result<(), Box<dyn Error>> {
             "|день: {day:2} месяц: {month:2} количество осадков: {amount:3} тип осадков: {ty}|"
         );
     }
-
-    Ok(())
 }
