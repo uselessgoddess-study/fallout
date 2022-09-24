@@ -1,5 +1,7 @@
 #![deny(clippy::all, clippy::pedantic, clippy::perf, clippy::nursery)]
 
+mod methods;
+
 use clap::{Parser, Subcommand, ValueEnum};
 use std::{
     cmp::Ordering,
@@ -67,10 +69,10 @@ const CLEAR_RANK: f32 = 1.5;
 
 #[derive(Debug)]
 struct DayInfo {
-    day: u8,
-    month: u8,
-    amount: f32,
-    ty: Fallout,
+    pub day: u8,
+    pub month: u8,
+    pub amount: f32,
+    pub ty: Fallout,
 }
 
 impl DayInfo {
